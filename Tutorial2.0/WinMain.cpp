@@ -18,7 +18,7 @@ iCmdshow : controls how the window you are building will displayed
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
-
+	// blaa
     System* system;
 	bool result;
 
