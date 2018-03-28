@@ -64,7 +64,12 @@ private:
 
 	// the only thing a HWND and a HINSTANCE have in common is that both are handles
 	HINSTANCE m_hinstance; // is a handle to the instance of the program you are writing 
-	HWND m_hwnd; // a handle to window
+
+	/*HWND is a handle to a window. As we went over before, handles are integers which 
+	identify an object. In this case, we're identifying a window. Simple. Because we have 
+	no window made, we put NULL, and Windows knows not to have this message come from 
+	any window, but the desktop.*/
+	HWND m_hwnd; 
 
 	Input* m_Input;
 	Graphics* m_Graphics;

@@ -16,6 +16,16 @@ System::System()
 	m_Graphics = 0;
 }
 
+/*Here I create an empty copy constructor and empty class destructor. 
+In this class I don't have need of them but if not defined some compilers will generate
+them for you, and in which case I'd rather they be empty. */
+
+System::System(const System& other)
+{
+
+}
+
+
 // You will also notice I don't do any object clean up in the class destructor. 
 // I instead do all my object clean up in the Shutdown function you will see further down. 
 // The reason being is that I don't trust it to be called. 
@@ -23,11 +33,6 @@ System::System()
 // class destructors resulting in memory leaks. 
 // You can of course call safer versions of these functions now 
 // but I'm just being careful when programming on windows. 
-System::System(const System& other)
-{
-
-}
-
 
 // It's the destructor, it destroys the instance, frees up memory, etc. etc.
 /*Destructors are usually used to deallocate memory and do other cleanup for a class object
@@ -76,6 +81,7 @@ bool System::Initialize()
 
 	// Initialize the grapchis object.
 	result = m_Graphics->Initialize(screenWidth, screenHeight, m_hwnd);
+
 	if (!result)
 	{
 		return false;
@@ -96,10 +102,17 @@ process application loop
 check if user wanted to quit during the frame processing*/
 void System::Run()
 {
+	/*Windows uses the MSG structure to pass many kinds of things to your program, 
+	including keys, mouse movements, clicks, changes made to your windows, etc. 
+	The usage of the parameters is different for different messages, so for details 
+	you need to look up a specific message. You should use a book or tutorial that 
+	shows you the basics of creating a Win API program. There you will encounter several 
+	example messages that you must handle.*/
 	MSG msg;
 	bool done, result;
 
 	// Initialize the message structure
+	// ZeroMemory fills a block of memory with zeros.
 	ZeroMemory(&msg, sizeof(MSG));
 
 	// Loop until there is a quit message from  the window or the user.
@@ -107,6 +120,15 @@ void System::Run()
 	while (!done)
 	{
 		// Handle the windows messages
+		// http://www.directxtutorial.com/Lesson.aspx?lessonid=9-1-4
+		/* PeekMessage() just looks into the message queue and checks to see if 
+		any messages are waiting. If not, the program will continue on, allowing 
+		us to do what we need.*/
+		/*What it does is indicate whether or not the message retrieved from the event 
+		queue should stay on the event queue or come off. We can put either PM_REMOVE 
+		or PM_NOREMOVE. The first one takes the messages off the queue when they are read, 
+		while the second one leaves the messages there for later retrieval. We will use 
+		the PM_REMOVE value here, and keep things simple.*/
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -168,15 +190,21 @@ I placed the FULL_SCREEN global variable at the top of the graphicsclass.h file
 in case you want to modify it.
 It will make sense later why I placed the global in that file instead of the header
 for this file. */
-void System::InitializeWindows(int& screenWidth, int& screenHeight)
+void System::InitializeWindows(int& screenWidth, int& screenHeight) // 
 {
-	WNDCLASSEX wc;
-	DEVMODE dmScreenSettings;
+	WNDCLASSEX wc; //Contains window class information. It is used with the RegisterClassEx and GetClassInfoEx  functions.
+	DEVMODE dmScreenSettings; // The DEVMODE data structure contains information about the initialization and environment of a printer or a display device.
 	int posX, posY;
 
 	// Get an axternal pointer to this object.
 	ApplicationHandle = this;
 
+
+	/*In an EXE, it does not make any difference, hInstance from WinMain() and 
+	GetModuleHandle(NULL) both refer to the same HINSTANCE (the module of the .exe file). 
+	But it does make a difference if you are creating windows inside of a DLL instead, since 
+	you have to use the DLL's hInstance but GetModuleHandle(NULL) will still return the 
+	HINSTANCE of the EXE that loaded the DLL.*/
 	// Get the instance of this application.
 	m_hinstance = GetModuleHandle(NULL);
 
@@ -184,20 +212,21 @@ void System::InitializeWindows(int& screenWidth, int& screenHeight)
 	m_applicationName = L"Engine";
 
 	// Setup the windows class with default settings.
-	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	wc.lpfnWndProc = WndProc; // A pointer to the window procedure.
+	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC; /*In this member, we store the style of the window. There are plenty of values we can insert, but we will almost never use any of them in game programming. Possible values for this can be found in the MSDN Library under WNDCLASSEX. For now, we will use CS_HREDRAW and logically OR it with CS_VREDRAW. What these two do is tell Windows to redraw the window if it is moved vertically or horizontally. This is useful for a window, but not a game. We will reset this value later when we get into fullscreen games.*/
+	wc.lpfnWndProc = WndProc; // A pointer to the window procedure... This value tells the window class what function to use when it gets a message from Windows. In our program, this function is WindProc(), but it could be WindowProc() or WinProc() or even ASDF() if it suited us. It doesn't matter what the function is called provided we tell the window class in this value.
 	wc.cbClsExtra = 0; // The number of extra bytes to allocate following the window-class structure. The system initializes the bytes to zero.
 	wc.cbWndExtra = 0; /*The number of extra bytes to allocate following the window instance. The system initializes the bytes to zero. If an application uses WNDCLASSEX to register a dialog box created by using the CLASS directive in the resource file, it must set this member to DLGWINDOWEXTRA.*/
 	wc.hInstance = m_hinstance; // A handle to the instance that contains the window procedure for the class.
 	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO); //A handle to the class icon. This member must be a handle to an icon resource. If this member is NULL, the system provides a default icon.
 	wc.hIconSm = wc.hIcon; /*A handle to a small icon that is associated with the window class. If this member is NULL, the system searches the icon resource specified by the hIcon member for an icon of the appropriate size to use as the small icon.*/
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW); /*A handle to the class cursor. This member must be a handle to a cursor resource. If this member is NULL, an application must explicitly set the cursor shape whenever the mouse moves into the application's window.*/
-	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH); /*A handle to the class background brush. This member can be a handle to the brush to be used for painting the background, or it can be a color value. */
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW); /*A handle to the class cursor. This member must be a handle to a cursor resource. If this member is NULL, an application must explicitly set the cursor shape whenever the mouse moves into the application's window. This member stores the default mouse image for the window class. This is done by using the return value from the function LoadCursor(), which has two parameters. The first is the hInstance of the application that stores the pointer graphic. We aren't getting into this, so we'll set it to NULL. The second one is a value that contains the default mouse pointer. There are others in the MSDN Library under LoadCursor().*/
+	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH); /*A handle to the class background brush. This member can be a handle to the brush to be used for painting the background, or it can be a color value. This member contains the 'brush' that will be used to color the background of our window. Brushes are beyond the scope of this tutorial, but they are used here to indicate the color of the background. COLOR_WINDOW indicates a brush that paints the window white (at least, for my settings). */
 	wc.lpszMenuName = NULL; /*Pointer to a null-terminated character string that specifies the resource name of the class menu, as the name appears in the resource file. If you use an integer to identify the menu, use the MAKEINTRESOURCE macro. If this member is NULL, windows belonging to this class have no default menu.*/
-	wc.lpszClassName = m_applicationName; /*A pointer to a null-terminated string or is an atom. If this parameter is an atom, it must be a class atom created by a previous call to the RegisterClass or RegisterClassEx function. The atom must be in the low-order word of lpszClassName; the high-order word must be zero.If lpszClassName is a string, it specifies the window class name. The class name can be any name registered with RegisterClass or RegisterClassEx, or any of the predefined control-class names.The maximum length for lpszClassName is 256. If lpszClassName is greater than the maximum length, the RegisterClassEx function will fail.*/
-	wc.cbSize = sizeof(WNDCLASSEX); /*The size, in bytes, of this structure. Set this member to sizeof(WNDCLASSEX). Be sure to set this member before calling the GetClassInfoEx function*/
+	wc.lpszClassName = m_applicationName; /*A pointer to a null-terminated string or is an atom. If this parameter is an atom, it must be a class atom created by a previous call to the RegisterClass or RegisterClassEx function. The atom must be in the low-order word of lpszClassName; the high-order word must be zero.If lpszClassName is a string, it specifies the window class name. The class name can be any name registered with RegisterClass or RegisterClassEx, or any of the predefined control-class names.The maximum length for lpszClassName is 256. If lpszClassName is greater than the maximum length, the RegisterClassEx function will fail. This is the name of the window class we are building. We are naming it "WindowClass1", even though we will only build one class. It doesn't matter what you name it, so long as you indicate it correctly when making the window itself.The 'L' that appears before the string, simply tells the compiler that this string should be made of 16-bit Unicode characters, rather than the usual 8-bit ANSI characters.*/
+	wc.cbSize = sizeof(WNDCLASSEX); /*The size, in bytes, of this structure. Set this member to sizeof(WNDCLASSEX). Be sure to set this member before calling the GetClassInfoEx function This one is fairly obvious. We need to size up this structure and tell it what it's measurements are. We will do this with the sizeof() operator.*/
 
 	// Register the window class.
+	// This function finally registers the window class. We fill its single parameter with the address of the struct we put together and Windows takes care of the rest. Easy, really.
 	RegisterClassEx(&wc); // Registers a window class for subsequent use in calls to the CreateWindow or CreateWindowEx function.
 
 	// Determine the resolution of the clients desktop screen.
@@ -233,9 +262,19 @@ void System::InitializeWindows(int& screenWidth, int& screenHeight)
 	}
 
 	// Create the window with the screen settings and get the handle to it.
-	m_hwnd = CreateWindowEx(WS_EX_APPWINDOW, m_applicationName, m_applicationName,
-		WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP, posX, posY, screenWidth, screenHeight,
-		NULL, NULL, m_hinstance, NULL);
+	m_hwnd = CreateWindowEx(
+		WS_EX_APPWINDOW, 
+		m_applicationName, 
+		m_applicationName,
+		WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP, 
+		posX, 
+		posY, 
+		screenWidth, 
+		screenHeight,
+		NULL, 
+		NULL, 
+		m_hinstance, 
+		NULL);
 	
 	// Bring the window up on the screen and set it as main focus.
 	ShowWindow(m_hwnd, SW_SHOW);

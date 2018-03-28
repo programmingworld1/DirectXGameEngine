@@ -2,6 +2,8 @@
 // Filename: inputclass.cpp
 //////////////////////////////
 #include "Input.h"
+#include <iostream>
+using namespace std;
 
 Input::Input()
 {
@@ -29,12 +31,13 @@ void Input::Initialize()
 	}
 
 	return;
-}
+};
 
 void Input::KeyDown(unsigned int input)
 {
 	// if a key is pressed then save that state in the key array.
 	m_keys[input] = true;
+
 	return;
 }
 
