@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "cameraclass.h"
 
+/*The class constructor will initialize the position and rotation of the camera to be at the origin of the scene.*/
 CameraClass::CameraClass()
 {
 	m_positionX = 0.0f;
@@ -24,6 +25,7 @@ CameraClass::~CameraClass()
 {
 }
 
+/*The SetPosition and SetRotation functions are used for setting up the position and rotation of the camera.*/
 void CameraClass::SetPosition(float x, float y, float z)
 {
 	m_positionX = x;
@@ -31,7 +33,6 @@ void CameraClass::SetPosition(float x, float y, float z)
 	m_positionZ = z;
 	return;
 }
-
 
 void CameraClass::SetRotation(float x, float y, float z)
 {
@@ -41,17 +42,22 @@ void CameraClass::SetRotation(float x, float y, float z)
 	return;
 }
 
+/*The GetPosition and GetRotation functions return the location and rotation of the camera to calling functions.*/
 XMFLOAT3 CameraClass::GetPosition()
 {
 	return XMFLOAT3(m_positionX, m_positionY, m_positionZ);
 }
-
 
 XMFLOAT3 CameraClass::GetRotation()
 {
 	return XMFLOAT3(m_rotationX, m_rotationY, m_rotationZ);
 }
 
+/*The Render function uses the position and rotation of the camera to build and update the view matrix. 
+We first setup our variables for up, position, rotation, and so forth. Then at the origin of the scene we 
+first rotate the camera based on the x, y, and z rotation of the camera. Once it is properly rotated when then 
+translate the camera to the position in 3D space. With the correct values in the position, lookAt, and up we can 
+then use the D3DXMatrixLookAtLH function to create the view matrix to represent the current camera rotation and translation.*/
 void CameraClass::Render()
 {
 	XMFLOAT3 up, position, lookAt;
@@ -59,14 +65,18 @@ void CameraClass::Render()
 	float yaw, pitch, roll;
 	XMMATRIX rotationMatrix;
 
-
+	/*As the name says, it defines in which direction “up” is. That’s quite an important thing. 
+	You need to know the position of the camera, you need to know which direction it’s facing, but you also need to know how it’s turned – i.e.
+	what will be perceived as up and down, left and right.
+    In our real world, the “up” vector of our field of vision is (usually) implied by the field of gravity, i.e. it’s the reverse (up, not down!) 
+	of the vector of gravity exerted by Earth*/
 	// Setup the vector that points upwards.
 	up.x = 0.0f;
 	up.y = 1.0f;
 	up.z = 0.0f;
 
 	// Load it into a XMVECTOR structure.
-	upVector = XMLoadFloat3(&up);
+	upVector = XMLoadFloat3(&up); /* XMLoadFloat3 Returns an XMVECTOR loaded with the data(x,y,z) from the pSource parameter.*/
 
 	// Setup the position of the camera in the world.
 	position.x = m_positionX;
@@ -77,7 +87,7 @@ void CameraClass::Render()
 	positionVector = XMLoadFloat3(&position);
 
 	// Setup where the camera is looking by default.
-	lookAt.x = 0.0f;
+	lookAt.x = 0.4f;
 	lookAt.y = 0.0f;
 	lookAt.z = 1.0f;
 
@@ -101,6 +111,8 @@ void CameraClass::Render()
 
 	// Finally create the view matrix from the three updated vectors.
 	m_viewMatrix = XMMatrixLookAtLH(positionVector, lookAtVector, upVector);
+
+	lookAtVector = XMVectorAdd(positionVector, lookAtVector);
 
 	return;
 }

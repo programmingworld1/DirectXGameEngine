@@ -49,7 +49,7 @@ public:
 	~D3d();
 
 	bool Initialize(int, int, bool, HWND, bool, float, float);
-	void SwapChain(DXGI_SWAP_CHAIN_DESC, int, int, unsigned int, unsigned int, bool, bool, HWND);
+	//void SwapChain(DXGI_SWAP_CHAIN_DESC&, int&, int&, unsigned int&, unsigned int&, bool&, bool&, HWND&);
 	void Shutdown();
 
 	void BeginScene(float, float, float, float);

@@ -29,92 +29,6 @@ D3d::~D3d()
 
 }
 
-void::SwapChain(DXGI_SWAP_CHAIN_DESC &swapChainDesc, int &screenWidth, int &screenHeight, unsigned int& numerator, unsigned int& denominator, bool &m_vsync_enabled, bool &fullscreen, HWND& hwnd)
-{
-	/*Now that we have the refresh rate from the system we can start the DirectX
-	initialization. The first thing we'll do is fill out the description of the swap chain.
-	The swap chain is the front and back buffer to which the graphics will be drawn.
-	Generally you use a single back buffer, do all your drawing to it, and then swap
-	it to the front buffer which then displays on the user's screen. That is why it is
-	called a swap chain. */
-
-	// Initialize the swap chain description.
-	ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
-
-	// Set to a single back buffer.
-	swapChainDesc.BufferCount = 1;
-
-	// Set the width and height of the back buffer.
-	swapChainDesc.BufferDesc.Width = screenWidth;
-	swapChainDesc.BufferDesc.Height = screenHeight;
-
-	// Set regular 32-bit surface for the back buffer.
-	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	/*The next part of the description of the swap chain is the refresh rate.
-	The refresh rate is how many times a second it draws the back buffer to the
-	front buffer. If vsync is set to true in our graphicsclass.h header then this
-	will lock the refresh rate to the system settings (for example 60hz).
-	That means it will only draw the screen 60 times a second (or higher if the system
-	refresh rate is more than 60). However if we set vsync to false then it will draw
-	the screen as many times a second as it can, however this can cause some visual
-	artifacts. */
-
-	// Set the refresh rate of the back buffer.
-	if (m_vsync_enabled)
-	{
-		swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
-		swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
-	}
-	else
-	{
-		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
-		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-	}
-
-	// Set the usage of the back buffer.
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-
-	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = hwnd;
-
-	/*Multisampling or (MSAA) is a form of Antialiasing which is used to remove the jagged lines from the images we see on the screen.
-	You might have noticed this jaggedness or aliasing, in 3D games and graphics ? If we enable AA, then the image becomes smoother,
-	because more pixel samples are used to lend these jagged lines. But this reduces the overall performance/fps when high values like 4X, 8X etc. are selected.
-	Though MSAA does not have a very high impact on FPS, as compared to Supersampling and Gamma Correct Antialiasing
-	If you've ever played a video game on your PC, you've probably seen a setting called "anti-aliasing", which smooths out jagged graphics. But there are different types of anti-aliasing, and some are better than others.*/
-
-	/*SSAA (also known as FSAA): Super sampling anti-aliasing was the first type of anti-aliasing available. It's useful on photorealistic images, but isn't very common in games anymore, because it uses so much processing power.
-	MSAA: Multisample anti-aliasing is one of the more common types of anti-aliasing available in modern games. It only smooths out the edges of polygons, not anything else—which cuts down on processing power compared to SSAA, but doesn't solve pixelated textures. (MSAA still uses quite a bit of power, though.)
-	CSAA and EQAA: These types of anti-aliasing (used by newer NVIDIA and AMD cards, respectively) are similar to MSAA, but at a fraction of the performance cost.
-	FXAA: Fast approximate anti-aliasing, which we've mentioned before, has a very small performance cost, and smooths out edges in all parts of the image. However, it usually makes the image look blurry, which means it isn't ideal if you want crisp graphics.
-	TXAA: Temporal anti-aliasing only works on certain newer graphics cards, but combines lots of different techniques to smooth out edges. It's better than FXAA, but still has some blurriness to it, and uses a bit more processing power.*/
-	// Turn multisampling off.
-	swapChainDesc.SampleDesc.Count = 1;
-	swapChainDesc.SampleDesc.Quality = 0;
-
-	// Set to full screen or windowed mode.
-	if (fullscreen)
-	{
-		swapChainDesc.Windowed = false;
-	}
-	else
-	{
-		swapChainDesc.Windowed = true;
-	}
-
-	// Set the scan line ordering and scaling to unspecified.
-	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-
-	// Discard the back buffer contents after presenting.
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-
-	// Don't set the advanced flags.
-	swapChainDesc.Flags = 0;
-}
-
-
 /*The Initialize function is what does the entire setup of Direct3D for DirectX 11.
 I have placed all the code necessary in here as well as some extra stuff that will
 facilitate future tutorials. I could have simplified it and taken out some items but
@@ -129,11 +43,11 @@ Direct3D needs this as well for creating the window with the correct settings.
 The screenDepth and screenNear variables are the depth settings for our 3D environment
 that will be rendered in the window. The vsync variable indicates if we want Direct3D to
 render according to the users monitor refresh rate or to just go as fast as possible. */
-
+// https://msdn.microsoft.com/en-us/library/windows/desktop/bb205075(v=vs.85).aspx
 bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, bool fullscreen, float screenDepth, float screenNear)
 {
-	HRESULT result;
-	IDXGIFactory* factory;
+	HRESULT result; // A 32-bit value that is used to describe an error or warning.
+	IDXGIFactory* factory; // CreateSoftwareAdapter, CreateSwapChain, EnumAdapters, GetWindowAssociation, MakeWindowAssociation
 	IDXGIAdapter* adapter; /*This could simply be described as the virtutal representation of the video card (assuming the video card is separate, and not built into the motherboard).*/
 	IDXGIOutput* adapterOutput;
 	unsigned int numModes, i, numerator, denominator; // unsigned int is only + not in the - starting from 0
@@ -154,7 +68,6 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	// Storr the csync settings.
 	m_vsync_enabled = vsync;
 
-
 	/*Before we can initialize Direct3D we have to get the refresh rate from the video
 	card/monitor. Each computer may be slightly different so we will need to query for
 	that information. We query for the numerator and denominator values and then pass
@@ -164,20 +77,30 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	of a buffer flip which will degrade performance and give us annoying errors in the
 	debug output. */
 
+	/*DXGI (DirectX Graphics Infrastructure) is a separate API from Direct3D that handles graphics related things like the swap chain, 
+	enumerating graphics hardware, and switching between windowed and full-screen mode. The idea for keeping it separate from Direct3D 
+	is that other graphics APIs (such as Direct2D) also require swap chains, enumerating graphics hardware, and switching between windowed 
+	and full-screen mode. In this way, multiple graphics APIs can use the DXGI API*/
 
 	// Create a directx graphics interface factory.
-	/*The DirectX Graphics Infrastructure is a component that lies at the base of all the most recent versions of Direct3D. 
-	Its job is to handle fundamental tasks such as displaying images on the screen and finding out what resolutions the monitor and video card can handle. 
-	DXGI is not actually a part of Direct3D. It underlies it and other graphics components, and it acts as an interface between Direct3D and the hardware.*/
-	/*Use a DXGI factory to generate objects that enumerate adapters, create swap chains, and associate a window with the alt+enter key sequence for
-	toggling to and from the fullscreen display mode.If the CreateDXGIFactory function succeeds, the reference count on the IDXGIFactory interface is incremented. 
+	/*The DirectX Graphics Infrastructure is a component that lies at the base of all the most recent versions of Direct3D.
+	Its job is to handle fundamental tasks such as displaying images on the screen and finding out what resolutions the monitor and video card can handle.
+	DXGI is not actually a part of Direct3D. It underlies it and other graphics components, and it acts as an interface between Direct3D and the hardware.
+	Use a DXGI factory to generate objects that enumerate adapters, create swap chains, and associate a window with the alt+enter key sequence for
+	toggling to and from the fullscreen display mode.If the CreateDXGIFactory function succeeds, the reference count on the IDXGIFactory interface is incremented.
 	To avoid a memory leak, when you finish using the interface, call the IDXGIFactory::Release method to release the interface.*/
-	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory); 
+	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
+	/*An adapter is an abstraction of the hardware and the software capability of your computer.
+	There are generally many adapters on your machine. Some devices are implemented in hardware (like your video card)
+	and some are implemented in software (like the Direct3D reference rasterizer). Adapters implement functionality used by a graphic application.
+	When enumerating these pieces of hardware, DXGI creates an IDXGIOutput1 interface for each output (or monitor) and an IDXGIAdapter2 interface for
+	each video card (even if it is a video card built into a motherboard). Enumeration is done by using an IDXGIFactory interface call, IDXGIFactory::EnumAdapters,
+	to return a set of IDXGIAdapter interfaces that represent the video hardware.*/
 	// Use the factory to create an adapter for the primary graphics interface(video card)
 	result = factory->EnumAdapters(0, &adapter);
 	if (FAILED(result))
@@ -268,9 +191,92 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	factory->Release();
 	factory = 0;
 
-	// 
+	// SwapChain(swapChainDesc, screenWidth, screenHeight, numerator, denominator, m_vsync_enabled, fullscreen, hwnd);
 
-	SwapChain(swapChainDesc, screenWidth, screenHeight, numerator, denominator, m_vsync_enabled, fullscreen, hwnd);
+	/*Now that we have the refresh rate from the system we can start the DirectX
+	initialization. The first thing we'll do is fill out the description of the swap chain.
+	The swap chain is the front and back buffer to which the graphics will be drawn.
+	Generally you use a single back buffer, do all your drawing to it, and then swap
+	it to the front buffer which then displays on the user's screen. That is why it is
+	called a swap chain. */
+
+	// Initialize the swap chain description.
+	ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
+
+	// Set to a single back buffer. The number of back buffers to use in the swap chain; we usually only use one back buffer for double buffering, although you could use two for triple buffering. 
+	swapChainDesc.BufferCount = 1;
+
+	// Set the width and height of the back buffer, resolutie of de backbuffer, in pixels, het zelde afmeting als de window
+	// als je allebei op 0 doet pakt die de window size maar beter is om het toch te setten
+	// BufferDesc: This structure describes the properties of the back buffer we want to create. The main properties we are concerned with are the width and height, and pixel format;
+	swapChainDesc.BufferDesc.Width = screenWidth;
+	swapChainDesc.BufferDesc.Height = screenHeight;
+
+	// Set regular 32-bit surface for the back buffer.
+	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	/*The next part of the description of the swap chain is the refresh rate.
+	The refresh rate is how many times a second it draws the back buffer to the
+	front buffer. If vsync is set to true in our graphicsclass.h header then this
+	will lock the refresh rate to the system settings (for example 60hz).
+	That means it will only draw the screen 60 times a second (or higher if the system
+	refresh rate is more than 60). However if we set vsync to false then it will draw
+	the screen as many times a second as it can, however this can cause some visual
+	artifacts. */
+
+	// Set the refresh rate of the back buffer.
+	if (m_vsync_enabled)
+	{
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
+		swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
+	}
+	else
+	{
+		// 0 over anything betekent geen vsync en.. updaten van scherm zo snel mogelijk als je het zo doet
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
+		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+	}
+
+	// Set the usage of the back buffer. Specify DXGI_USAGE_RENDER_TARGET_OUTPUT because we are going to be rendering to the back buffer (i.e., use it as a render target)
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+
+	// A handle to the window we are rendering into. 
+	swapChainDesc.OutputWindow = hwnd;
+
+	/*Multisampling or (MSAA) is a form of Antialiasing which is used to remove the jagged lines from the images we see on the screen.
+	You might have noticed this jaggedness or aliasing, in 3D games and graphics ? If we enable AA, then the image becomes smoother,
+	because more pixel samples are used to lend these jagged lines. But this reduces the overall performance/fps when high values like 4X, 8X etc. are selected.
+	Though MSAA does not have a very high impact on FPS, as compared to Supersampling and Gamma Correct Antialiasing
+	If you've ever played a video game on your PC, you've probably seen a setting called "anti-aliasing", which smooths out jagged graphics. But there are different types of anti-aliasing, and some are better than others.*/
+
+	/*SSAA (also known as FSAA): Super sampling anti-aliasing was the first type of anti-aliasing available. It's useful on photorealistic images, but isn't very common in games anymore, because it uses so much processing power.
+	MSAA: Multisample anti-aliasing is one of the more common types of anti-aliasing available in modern games. It only smooths out the edges of polygons, not anything else—which cuts down on processing power compared to SSAA, but doesn't solve pixelated textures. (MSAA still uses quite a bit of power, though.)
+	CSAA and EQAA: These types of anti-aliasing (used by newer NVIDIA and AMD cards, respectively) are similar to MSAA, but at a fraction of the performance cost.
+	FXAA: Fast approximate anti-aliasing, which we've mentioned before, has a very small performance cost, and smooths out edges in all parts of the image. However, it usually makes the image look blurry, which means it isn't ideal if you want crisp graphics.
+	TXAA: Temporal anti-aliasing only works on certain newer graphics cards, but combines lots of different techniques to smooth out edges. It's better than FXAA, but still has some blurriness to it, and uses a bit more processing power.*/
+	// Turn multisampling off.
+	swapChainDesc.SampleDesc.Count = 1; // This member is used to tell Direct3D how to perform multisample anti-aliased (MSAA) rendering. If you are a next-gen game enthusiast, you have probably heard of this. Basically, anti-aliasing renders the edges of shapes smoothly by blending each pixel slightly with the surounding pixels.
+	swapChainDesc.SampleDesc.Quality = 0;
+
+	// Set to full screen or windowed mode.
+	if (fullscreen)
+	{
+		swapChainDesc.Windowed = false;
+	}
+	else
+	{
+		swapChainDesc.Windowed = true;
+	}
+
+	// Set the scan line ordering and scaling to unspecified.
+	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+
+	// Discard the back buffer contents after presenting. Specify DXGI_SWAP_EFFECT_DISCARD in order to let the display driver select the most efficient presentation method. 
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+	// Don't set the advanced flags.  If this flag is not specified, then when the application is switching to full-screen mode, it will use the current desktop display mode. 
+	swapChainDesc.Flags = 0;
 
 	/*After setting up the swap chain description we also need to setup one more variable
 	called the feature level. This variable tells DirectX what version we plan to use.
@@ -301,8 +307,19 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	11 video cards yet on all their machines. */
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
-	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1,
-		D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &m_device, NULL, &m_deviceContext);
+	result = D3D11CreateDeviceAndSwapChain(
+		NULL, /* Specifies the display adapter we want the create device to represent. Specifying null for this parameter uses the primary display adapter. */
+		D3D_DRIVER_TYPE_HARDWARE, // The D3D_DRIVER_TYPE, which represents the driver type to create. In general, you will always specify D3D_DRIVER_TYPE_HARDWARE for this parameter to use 3D hardware acceleration for rendering.  but there are other options
+		NULL, /* This is used for supplying a software driver. We always specify null because we are using hardware for rendering. */
+		0, 
+		&featureLevel, 1, /* Specifying null for this parameter indicates to choose the greatest feature level supported. */
+		D3D11_SDK_VERSION, 
+		&swapChainDesc, // A pointer to a swap chain description (see DXGI_SWAP_CHAIN_DESC) that contains initialization parameters for the swap chain.
+		&m_swapChain, //Returns the address of a pointer to the IDXGISwapChain object that represents the swap chain used for rendering.
+		&m_device, // Returns the address of a pointer to an ID3D11Device object that represents the device created. If this parameter is NULL, no ID3D11Device will be returned'.
+		NULL, 
+		&m_deviceContext); // Returns the address of a pointer to an ID3D11DeviceContext object that represents the device context. If this parameter is NULL, no ID3D11DeviceContext will be returned.
+
 	if (FAILED(result))
 	{
 		return false;
@@ -317,10 +334,22 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	in the machine and have the user choose which one to use and then specify that card
 	when creating the device. */
 
+
+	/*Let's start with where to render to. Now logically you would say, "the backbuffer, duh!" and be done. 
+	However, Direct3D doesn't actually know that at this point. It is possible that you do not want to render 
+	to the back buffer right away. For example many games render to the surface of a model, then render that 
+	model to the back buffer. This technique can produce a variety of effects.*/
+
 	/*Now that we have a swap chain we need to get a pointer to the back buffer
 	and then attach it to the swap chain. We'll use the CreateRenderTargetView
 	function to attach the back buffer to our swap chain. */
-
+	/*In 3D rendering, a texture is another name for an image. An ID3D11Texture2D is an object that stores a flat image. 
+	Like any COM object, we first define the pointer, and later a function creates the object for us.*/
+	/*GetBuffer() is a function finds the back buffer on the swap chain and creates an interface directly pointing to it.
+	The first parameter is the number of the back buffer we want to obtain. 
+	We are only using one back buffer on this swap chain, and it is back buffer #0. Therefore the first parameter will be 0.
+	The second parameter is not that new to us. __uuidof() tells GetBuffer() what type of COM interface we want to obtain.
+	The third parameter is the address of our interface ComPtr. GetBuffer() will store our interface here.*/
 	// Get the pointer to the back buffer.
 	result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
 	if (FAILED(result))
@@ -328,6 +357,11 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 		return false;
 	}
 
+	/*When rendering in Direct3D, DirectX must know where exactly to render to. 
+	The render target view is a COM object that maintains a location in video memory to render into. In most cases this will be the back buffer. */
+	/*So, if I understand this correctly, getBuffer returns the pointer to actual buffer. 
+	CreateRenderTargetView makes this buffer a render target (aka Framebuffer) which is then bound
+	to in the rendering pipeline. PS: RenderTargetView doesn't create another buffer.*/
 	// Create the render target view with the back buffer pointer.
 	result = m_device->CreateRenderTargetView(backBufferPtr, NULL, &m_renderTargetView);
 	if (FAILED(result))
@@ -349,17 +383,17 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
 
 	// Set up the description of the depth buffer.
-	depthBufferDesc.Width = screenWidth;
-	depthBufferDesc.Height = screenHeight;
-	depthBufferDesc.MipLevels = 1;
-	depthBufferDesc.ArraySize = 1;
-	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthBufferDesc.Width = screenWidth; // The width of the texture in texels
+	depthBufferDesc.Height = screenHeight; // The height of the texture in texels
+	depthBufferDesc.MipLevels = 1; // The number of mipmap levels. For creating the depth/stencil buffer, our texture only needs one mipmap level
+	depthBufferDesc.ArraySize = 1; // The number of textures in a texture array. For the depth/stencil buffer, we only need one texture
+	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // A member of the DXGI_FORMAT enumerated type specifying the format of the texels
 	depthBufferDesc.SampleDesc.Count = 1;
 	depthBufferDesc.SampleDesc.Quality = 0;
-	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	depthBufferDesc.CPUAccessFlags = 0;
-	depthBufferDesc.MiscFlags = 0;
+	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT; // A member of the D3D11_USAGE enumerated type specifying how the texture will be used
+	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL; // One or more flags ORed together specifying where the resource will be bound to the pipeline. For a depth/stencil buffer, this needs to be D3D11_BIND_DEPTH_STENCIL. 
+	depthBufferDesc.CPUAccessFlags = 0; // Specifies how the CPU will access the resource. For the depth/stencil buffer, only the GPU writes and reads to the depth/buffer; therefore, we can specify zero for this value, as the CPU will not be reading or writing to the depth/stencil buffer. 
+	depthBufferDesc.MiscFlags = 0; // Optional flags, which do not apply to the depth/stencil buffer, so are set to zero.
 
 	/*Now we create the depth/stencil buffer using that description.
 	You will notice we use the CreateTexture2D function to make the buffers,
@@ -440,6 +474,9 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	buffer that we previously created. With the graphics written to the back buffer
 	we can then swap it to the front and display our graphics on the user's screen. */
 
+	/*The first parameter is the number of render targets we are binding; we bind only one here, but more can be bound to render 
+	simultaneously to several render targets (an advanced technique). The second parameter is a pointer to the first element in an 
+	array of render target view pointers to bind to the pipeline. The third parameter is a pointer to the depth/stencil view to bind to the pipeline.*/
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
 	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
 

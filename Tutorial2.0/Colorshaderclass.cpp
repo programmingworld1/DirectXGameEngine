@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "colorshaderclass.h"
 
+/*As usual the class constructor initializes all the private pointers in the class to null.*/
 ColorShaderClass::ColorShaderClass()
 {
 	m_vertexShader = 0;
@@ -11,20 +12,19 @@ ColorShaderClass::ColorShaderClass()
 	m_matrixBuffer = 0;
 }
 
-
 ColorShaderClass::ColorShaderClass(const ColorShaderClass& other)
 {
 }
 
-
 ColorShaderClass::~ColorShaderClass()
 {
+
 }
 
+/*The Initialize function will call the initialization function for the shaders. We pass in the name of the HLSL shader files, in this tutorial they are named color.vs and color.ps.*/
 bool ColorShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
-
 
 	// Initialize the vertex and pixel shaders.
 	result = InitializeShader(device, hwnd, L"../Tutorial2.0/color_vs.hlsl", L"../Tutorial2.0/color_ps.hlsl");
@@ -36,6 +36,7 @@ bool ColorShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	return true;
 }
 
+/*The Shutdown function will call the shutdown of the shader.*/
 void ColorShaderClass::Shutdown()
 {
 	// Shutdown the vertex and pixel shaders as well as the related objects.
@@ -44,11 +45,12 @@ void ColorShaderClass::Shutdown()
 	return;
 }
 
+/*Render will first set the parameters inside the shader using the SetShaderParameters function. 
+Once the parameters are set it then calls RenderShader to draw the green triangle using the HLSL shader.*/
 bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 	XMMATRIX projectionMatrix)
 {
 	bool result;
-
 
 	// Set the shader parameters that it will use for rendering.
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix);
@@ -66,20 +68,19 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT result;
-	ID3D10Blob* errorMessage;
+	ID3D10Blob* errorMessage; /*Blobs can be used as a data buffer, storing vertex, adjacency, and material information during mesh optimization and loading operations. Also, these objects are used to return object code and error messages in APIs that compile vertex, geometry and pixel shaders.*/
 	ID3D10Blob* vertexShaderBuffer;
 	ID3D10Blob* pixelShaderBuffer;
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 	unsigned int numElements;
 	D3D11_BUFFER_DESC matrixBufferDesc;
 
-
 	// Initialize the pointers this function will use to null.
 	errorMessage = 0;
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
 
-	// Compile the vertex shader code.
+	// Compile the vertex shader code. D3DCompileFromFile Compiles Microsoft High Level Shader Language (HLSL) code into bytecode for a given target.
 	result = D3DCompileFromFile(vsFilename, NULL, NULL, "ColorVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
 		&vertexShaderBuffer, &errorMessage);
 	if (FAILED(result))
@@ -94,7 +95,6 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 		{
 			MessageBox(hwnd, vsFilename, L"Missing Shader File", MB_OK);
 		}
-
 		return false;
 	}
 
@@ -261,7 +261,7 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, X
 	MatrixBufferType* dataPtr;
 	unsigned int bufferNumber;
 
-	// Transpose the matrices to prepare them for the shader.
+	// Transpose/omzetten the matrices to prepare them for the shader.
 	worldMatrix = XMMatrixTranspose(worldMatrix);
 	viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);

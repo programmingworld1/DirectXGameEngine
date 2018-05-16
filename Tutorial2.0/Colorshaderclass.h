@@ -1,3 +1,5 @@
+// The ColorShaderClass is what we will use to invoke(aanroepen) our HLSL shaders for drawing the 3D models that are on the GPU.
+
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: colorshaderclass.h
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +24,9 @@ using namespace std;
 class ColorShaderClass
 {
 private:
-
+	/*Here is the definition of the cBuffer type that will be used with the vertex shader.
+	This typedef must be exactly the same as the one in the vertex shader as the model data 
+	needs to match the typedefs in the shader for proper rendering.*/
 	struct MatrixBufferType
 	{
 		XMMATRIX world;
@@ -35,6 +39,8 @@ public:
 	ColorShaderClass(const ColorShaderClass&);
 	~ColorShaderClass();
 
+	/*The functions here handle initializing and shutdown of the shader. 
+	The render function sets the shader parameters and then draws the prepared model vertices using the shader.*/
 	bool Initialize(ID3D11Device*, HWND);
 	void Shutdown();
 	bool Render(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX);

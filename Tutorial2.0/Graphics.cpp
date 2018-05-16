@@ -57,7 +57,7 @@ bool Graphics::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Set the initial position of the camera.
-	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
+	m_Camera->SetPosition(-2.9f, 0.0f, -5.0f);
 
 	// Create the model object.
 	m_Model = new ModelClass;
@@ -158,7 +158,6 @@ bool Graphics::Render()
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	bool result;
-
 
 	// Clear the buffers to begin the scene.
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
