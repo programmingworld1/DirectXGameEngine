@@ -101,6 +101,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	When enumerating these pieces of hardware, DXGI creates an IDXGIOutput1 interface for each output (or monitor) and an IDXGIAdapter2 interface for
 	each video card (even if it is a video card built into a motherboard). Enumeration is done by using an IDXGIFactory interface call, IDXGIFactory::EnumAdapters,
 	to return a set of IDXGIAdapter interfaces that represent the video hardware.*/
+
 	// Use the factory to create an adapter for the primary graphics interface(video card)
 	result = factory->EnumAdapters(0, &adapter);
 	if (FAILED(result))
@@ -343,6 +344,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	/*Now that we have a swap chain we need to get a pointer to the back buffer
 	and then attach it to the swap chain. We'll use the CreateRenderTargetView
 	function to attach the back buffer to our swap chain. */
+
 	/*In 3D rendering, a texture is another name for an image. An ID3D11Texture2D is an object that stores a flat image. 
 	Like any COM object, we first define the pointer, and later a function creates the object for us.*/
 	/*GetBuffer() is a function finds the back buffer on the swap chain and creates an interface directly pointing to it.
@@ -473,7 +475,6 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	This way the graphics that the pipeline renders will get drawn to our back
 	buffer that we previously created. With the graphics written to the back buffer
 	we can then swap it to the front and display our graphics on the user's screen. */
-
 	/*The first parameter is the number of render targets we are binding; we bind only one here, but more can be bound to render 
 	simultaneously to several render targets (an advanced technique). The second parameter is a pointer to the first element in an 
 	array of render target view pointers to bind to the pipeline. The third parameter is a pointer to the depth/stencil view to bind to the pipeline.*/
@@ -487,7 +488,6 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	DirectX draw both the front and back faces of polygons. By default DirectX already
 	has a rasterizer state set up and working the exact same as the one below but you
 	have no control to change it unless you set up one yourself. */
-
 	// Setup the raster description which will determine how and what polygons will be drawn.
 	rasterDesc.AntialiasedLineEnable = false;
 	rasterDesc.CullMode = D3D11_CULL_BACK;
@@ -641,7 +641,6 @@ completed at the end of each frame. */
 void D3d::BeginScene(float red, float green, float blue, float alpha)
 {
 	float color[4];
-
 
 	// Setup the color to clear the buffer to.
 	color[0] = red;
