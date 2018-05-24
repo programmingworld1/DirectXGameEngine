@@ -7,7 +7,7 @@ Graphics::Graphics()
 {
 	// So the very first change is in the class constructor. Here we initialize the pointer to null for safety reasons as we do with all class pointers. 
 
-	m_Direct3D = 0; // - added
+	m_Direct3D = 0;
 	m_Camera = 0;
 	m_Model = 0;
 	m_ColorShader = 0;
