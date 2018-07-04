@@ -193,7 +193,7 @@ for this file. */
 void System::InitializeWindows(int& screenWidth, int& screenHeight) // 
 {
 	WNDCLASSEX wc; //Contains window class information. It is used with the RegisterClassEx and GetClassInfoEx  functions.
-	DEVMODE dmScreenSettings; // The DEVMODE data structure contains information about the initialization and environment of a printer or a display device.
+	DEVMODE dmScreenSettings; // The DEVMODE data structure contains information about the initialization and environment of a display device.
 	int posX, posY;
 
 	// Get an axternal pointer to this object.

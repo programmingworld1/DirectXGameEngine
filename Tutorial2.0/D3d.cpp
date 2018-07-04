@@ -49,7 +49,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	HRESULT result; // A 32-bit value that is used to describe an error or warning.
 	IDXGIFactory* factory; // CreateSoftwareAdapter, CreateSwapChain, EnumAdapters, GetWindowAssociation, MakeWindowAssociation
 	IDXGIAdapter* adapter; /*This could simply be described as the virtutal representation of the video card (assuming the video card is separate, and not built into the motherboard).*/
-	IDXGIOutput* adapterOutput;
+	IDXGIOutput* adapterOutput; // An IDXGIOutput interface represents an adapter output (such as a monitor). 
 	unsigned int numModes, i, numerator, denominator; // unsigned int is only + not in the - starting from 0
 	unsigned long long stringLength; 
 	DXGI_MODE_DESC* displayModeList;
@@ -102,7 +102,8 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	each video card (even if it is a video card built into a motherboard). Enumeration is done by using an IDXGIFactory interface call, IDXGIFactory::EnumAdapters,
 	to return a set of IDXGIAdapter interfaces that represent the video hardware.*/
 
-	// Use the factory to create an adapter for the primary graphics interface(video card)
+	// When you create a factory, the factory enumerates the set of adapters that are available in the system. 
+	// Use the factory to create an adapter for the primary graphics interface(video card), Enumerates the adapters (video cards).
 	result = factory->EnumAdapters(0, &adapter);
 	if (FAILED(result))
 	{
@@ -117,21 +118,21 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	}
 
 	// Get the number of modes that fix the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
-	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
+	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL); // pak eerst aantal modus
 	if (FAILED(result))
 	{
 		return false;
 	}
 
 	// Create a list to hold all the possible display modes for this monitor/video card combination.
-	displayModeList = new DXGI_MODE_DESC[numModes];
+	displayModeList = new DXGI_MODE_DESC[numModes]; // maak nu een lijst aan met de aantal modus
 	if (!displayModeList)
 	{
 		return false;
 	}
 
-	// Now fill the display mode list structures.
-	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
+	// Now fill the display mode list structures. 
+	result = adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList); // full dat lijst met de echte modus
 	if (FAILED(result))
 	{
 		return false;
@@ -139,7 +140,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
-	for (i = 0; i<numModes; i++)
+	for (i = 0; i<numModes; i++) // loop nu door alle modus heen en als het overeenkomt pak je die twee waardes
 	{
 		if (displayModeList[i].Width == (unsigned int)screenWidth)
 		{
@@ -191,8 +192,6 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	// Release the factory.
 	factory->Release();
 	factory = 0;
-
-	// SwapChain(swapChainDesc, screenWidth, screenHeight, numerator, denominator, m_vsync_enabled, fullscreen, hwnd);
 
 	/*Now that we have the refresh rate from the system we can start the DirectX
 	initialization. The first thing we'll do is fill out the description of the swap chain.
@@ -380,6 +379,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	properly in 3D space. At the same time we will attach a stencil buffer to our
 	depth buffer. The stencil buffer can be used to achieve effects such as motion
 	blur, volumetric shadows, and other things. */
+	/*In order for Direct3D to determine which pixels of an object are in front of another, it uses a technique called depth buffering or z-buffering.*/
 
 	// Initialize the description of the depth buffer.
 	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
@@ -403,6 +403,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	polygons are sorted and then rasterized they just end up being colored pixels
 	in this 2D buffer. Then this 2D buffer is drawn to the screen. */
 
+	/* the depth buffer is just a 2D texture that stores the depth information (and stencil information if using stenciling)*/
 	// Create the texture for the depth buffer using the filled out description.
 	result = m_device->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilBuffer);
 	if (FAILED(result))
@@ -412,7 +413,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 
 	/*Now we need to setup the depth stencil description.
 	This allows us to control what type of depth test Direct3D will do for each pixel. */
-
+	/*we can use the stencil buffer to block rendering to certain areas of the back buffer. The decision to block a particular pixel from being written is decided by the stencil tes*/
 	// Initialize the description of the stencil state.
 	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 
@@ -446,7 +447,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	}
 
 	/*With the created depth stencil state we can now set it so that it takes effect. Notice we use the device context to set it. */
-
+	/*we bind a depth/stencil state block to the output merger stage of the pipeline*/
 	// Set the depth stencil state.
 	m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
 

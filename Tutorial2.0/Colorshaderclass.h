@@ -8,11 +8,11 @@
 
 
 //////////////
-// INCLUDES //
+// INCLUDES // https://www.3dgep.com/introduction-to-directx-11/
 //////////////
 #include <d3d11.h>
-#include <d3dcompiler.h>
-#include <directxmath.h>
+#include <d3dcompiler.h> // The d3dcompiler header file is required for loading and compiling HLSL shaders. 
+#include <directxmath.h> // The DirectXMath header file includes math primitives like vectors, matrices and quaternions as well as the functions to operate on those primitives.
 #include <fstream>
 using namespace DirectX;
 using namespace std;
@@ -29,6 +29,11 @@ private:
 	needs to match the typedefs in the shader for proper rendering.*/
 	struct MatrixBufferType
 	{
+		/*The World Matrix translates the position of your vertices from model space to World space. That means it applies its position in the world and its rotation.
+
+		The View Matrix translates those vertices from world space to camera space. This means the new vertices are in relation to you camera.
+
+		The Projection Matrix finally translates those vertices from world space to projection Space. That means it finally calculates where you vertices are actually displayed on you Display/Monitor.*/
 		XMMATRIX world;
 		XMMATRIX view;
 		XMMATRIX projection;
