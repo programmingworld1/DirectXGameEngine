@@ -180,13 +180,6 @@ bool Graphics::Render()
 		return false;
 	}
 
-	///*The final change to this class is in the Render function.
-	//We call the m_Direct3D object to clear the screen to a grey color.
-	//After that we call EndScene so that the grey color is presented to the window. */
-
-	//// Clear the buffers to begin the scene.
-	//m_Direct3D->BeginScene(1.0f, 0.0f, 0.5f, 1.0f);
-
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();
 
