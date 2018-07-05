@@ -153,6 +153,9 @@ bool Graphics::Frame()
 	return true;
 }
 
+
+// bla
+
 bool Graphics::Render()
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
