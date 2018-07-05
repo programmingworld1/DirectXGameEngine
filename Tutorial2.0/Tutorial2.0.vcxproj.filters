@@ -70,8 +70,5 @@
     <FxCompile Include="color_vs.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
-    <FxCompile Include="sadasder.hlsl">
-      <Filter>Source Files</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>
