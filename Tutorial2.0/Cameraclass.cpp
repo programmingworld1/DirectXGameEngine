@@ -61,9 +61,9 @@ then use the D3DXMatrixLookAtLH function to create the view matrix to represent 
 void CameraClass::Render()
 {
 	XMFLOAT3 up, position, lookAt;
-	XMVECTOR upVector, positionVector, lookAtVector;
-	float yaw, pitch, roll;
-	XMMATRIX rotationMatrix;
+	XMVECTOR upVector, positionVector, lookAtVector; // A vector refers to a quantity that possesses both magnitude and direction
+	float yaw, pitch, roll; // y, x, z
+	XMMATRIX rotationMatrix; // this is a 4 by 4 matrix
 
 	/*As the name says, it defines in which direction “up” is. That’s quite an important thing. 
 	You need to know the position of the camera, you need to know which direction it’s facing, but you also need to know how it’s turned – i.e.
@@ -77,7 +77,7 @@ void CameraClass::Render()
 
 	// Load it into a XMVECTOR structure.
 	upVector = XMLoadFloat3(&up); /* XMLoadFloat3 Returns an XMVECTOR loaded with the data(x,y,z) from the pSource parameter.*/
-
+	
 	// Setup the position of the camera in the world.
 	position.x = m_positionX;
 	position.y = m_positionY;
@@ -87,7 +87,7 @@ void CameraClass::Render()
 	positionVector = XMLoadFloat3(&position);
 
 	// Setup where the camera is looking by default.
-	lookAt.x = 0.4f;
+	lookAt.x = 0.0f;
 	lookAt.y = 0.0f;
 	lookAt.z = 1.0f;
 

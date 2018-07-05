@@ -57,7 +57,7 @@ bool Graphics::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Set the initial position of the camera.
-	m_Camera->SetPosition(-2.9f, 0.0f, -5.0f);
+	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
 	// Create the model object.
 	m_Model = new ModelClass;
@@ -155,14 +155,13 @@ bool Graphics::Frame()
 
 bool Graphics::Render()
 {
-
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	bool result;
 
 	// Clear the buffers to begin the scene.
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Generate the view matrix based on the camera's position.
+	// Generate the view matrix (based on the camera's position.)
 	m_Camera->Render();
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
@@ -179,13 +178,6 @@ bool Graphics::Render()
 	{
 		return false;
 	}
-
-	///*The final change to this class is in the Render function.
-	//We call the m_Direct3D object to clear the screen to a grey color.
-	//After that we call EndScene so that the grey color is presented to the window. */
-
-	//// Clear the buffers to begin the scene.
-	//m_Direct3D->BeginScene(1.0f, 0.0f, 0.5f, 1.0f);
 
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();

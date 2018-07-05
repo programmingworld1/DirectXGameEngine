@@ -544,7 +544,7 @@ bool D3d::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	the identity matrix and keep a copy of it in this object. The copy will be needed
 	to be passed to the shaders for rendering also. */
 
-	// Initialize the world matrix to the identity matrix.
+	// Initialize the world matrix to the identity matrix. (Returns the identity matrix.)
 	m_worldMatrix = XMMatrixIdentity();
 
 	/*This is where you would generally create a view matrix.
