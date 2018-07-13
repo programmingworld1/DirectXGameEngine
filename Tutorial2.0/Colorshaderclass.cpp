@@ -153,9 +153,9 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	made default for now as they are not needed in this tutorial.*/
 	// Create the vertex input layout description.
 	// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
-	polygonLayout[0].SemanticName = "POSITION";
+	polygonLayout[0].SemanticName = "POSITION"; /*A semantic is a string which tells the GPU what the value is used for. There are numerous semantics possible, but we'll learn them as we come to them. "POSITION" represents a 3-dimensional position using float values.*/
 	polygonLayout[0].SemanticIndex = 0;
-	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT; /*This value is represents format of the data. On many semantics, the number of values is arbitrary (so long as its less than four). All that matters is that the format matches what you use in your vertices. The format here shows three float values: one for red, green, and blue. Yes, we aren't talking about color, but position is stored the same exact way, and there isn't a special value for X, Y, and Z.*/
 	polygonLayout[0].InputSlot = 0;
 	polygonLayout[0].AlignedByteOffset = 0;
 	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;

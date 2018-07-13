@@ -11,6 +11,19 @@ in buffer object types called "cbuffer" even if it is just a single global varia
 Logically organizing these buffers is important for efficient execution of shaders as well 
 as how the graphics card will store the buffers. In this example I've put three matrices in 
 the same buffer since I will update them each frame at the same time.*/
+/*Constant buffers reduce the bandwidth(De hoeveelheid data die per tijdseenheid over een verbinding gestuurd kan worden.)
+required to update shader constants by allowing 
+shader constants to be grouped together and committed at the same time rather 
+than making individual calls to commit each constant separately.
+A constant buffer is a specialized buffer resource that is accessed like a 
+buffer. Each constant buffer can hold up to 4096 vectors; each vector contains 
+up to four 32-bit values. You can bind up to 14 constant buffers per pipeline 
+stage (2 additional slots are reserved for internal use).
+The reason it works either way is (when deleting cbuffer)due to the legacy way constants were handled in Direct3D 8/Direct3D 9. 
+Back then, there was only a single shared array of constants for the entire shader (one for VS and one for PS). 
+This required that you had to change the constant array every single time you called Draw.
+In Direct3D 10, constants were reorganized into one or more Constant Buffers to make it easier 
+to update some constants while leaving others alone, and thus sending less data to the GPU.*/
 /////////////
 // GLOBALS //
 /////////////
@@ -21,12 +34,11 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 };
 
-
 /*Similar to C we can create our own type definitions. 
 We will use different types such as float4 that are available to HLSL which 
 make programming shaders easier and readable. In this example we are creating 
 types that have x, y, z, w position vectors and red, green, blue, alpha colors. 
-The POSITION, COLOR, and SV_POSITION are semantics that convey to the GPU the use of the variable. 
+The POSITION, COLOR, and SV_POSITION are semantics that convey(overbrengen) to the GPU the use of the variable. 
 I have to create two different structures here since the semantics are different for vertex and pixel shaders 
 even though the structures are the same otherwise. POSITION works for vertex shaders and SV_POSITION works 
 for pixel shaders while COLOR works for both. If you want more than one of the same type then you have 
@@ -45,7 +57,7 @@ struct PixelInputType
 	float4 position : SV_POSITION;
 	float4 color : COLOR;
 };
-
+ 
 /*The vertex shader is called by the GPU when it is processing data from the vertex buffers 
 that have been sent to it. This vertex shader which I named ColorVertexShader will be called for
 every single vertex in the vertex buffer. The input to the vertex shader must match the data format 
