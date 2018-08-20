@@ -21,7 +21,6 @@ Texture2D shaderTexture; // this is the texture resource
 SamplerState SampleType;  
 
 // The PixelInputType for the texture pixel shader is also modified using texture coordinates instead of the color values.
-
 //////////////
 // TYPEDEFS //
 //////////////
