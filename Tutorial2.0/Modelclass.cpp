@@ -11,6 +11,8 @@ ModelClass::ModelClass()
 {
 	m_vertexBuffer = 0;
 	m_indexBuffer = 0;
+	m_Texture = 0;
+
 }
 
 ModelClass::ModelClass(const ModelClass& other)
@@ -22,12 +24,19 @@ ModelClass::~ModelClass()
 }
 
 /*The Initialize function will call the initialization functions for the vertex and index buffers.*/
-bool ModelClass::Initialize(ID3D11Device* device)
+bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* textureFilename)
 {
 	bool result;
 
 	// Initialize the vertex and index buffers.
 	result = InitializeBuffers(device);
+	if (!result)
+	{
+		return false;
+	}
+
+	// Load the texture for this model.
+	result = LoadTexture(device, deviceContext, textureFilename);
 	if (!result)
 	{
 		return false;
@@ -39,6 +48,10 @@ bool ModelClass::Initialize(ID3D11Device* device)
 /*The Shutdown function will call the shutdown functions for the vertex and index buffers.*/
 void ModelClass::Shutdown()
 {
+	// The Shutdown function now calls the new private function to release the texture object that was loaded during initialization.
+	// Release the model texture.
+	ReleaseTexture();
+
 	// Shutdown the vertex and index buffers.
 	ShutdownBuffers();
 
@@ -59,6 +72,12 @@ void ModelClass::Render(ID3D11DeviceContext* deviceContext)
 int ModelClass::GetIndexCount()
 {
 	return m_indexCount;
+}
+
+// GetTexture is a new function that returns the model texture resource.The texture shader will need access to this texture to render the model.
+ID3D11ShaderResourceView* ModelClass::GetTexture()
+{
+	return m_Texture->GetTexture();
 }
 
 /*The InitializeBuffers function is where we handle creating the vertex and index buffers. 
@@ -94,32 +113,27 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	/*Now fill both the vertex and index array with the three points of the triangle as well as the index to each of the points. 
-	Please note that I create the points in the clockwise order of drawing them. If you do this counter clockwise it will think the triangle 
-	is facing the opposite direction and not draw it due to back face culling. Always remember that the order in which you send your vertices 
-	to the GPU is very important. The color is set here as well since it is part of the vertex description. I set the color to green.*/
+	/* The vertex array now has a texture coordinate component instead of a color component.
+	The texture vector is always U first and V second.For example the first texture coordinate 
+	is bottom left of the triangle which corresponds to U 0.0, V 1.0.Use the diagram at the top 
+	of this page to figure out what your coordinates need to be.Note that you can change the 
+	coordinates to map any part of the texture to any part of the polygon face.In this tutorial 
+	I'm just doing a direct mapping for simplicity reasons.*/
 
 	// Load the vertex array with data.
 	vertices[0].position = XMFLOAT3(-1.0f, -1.0f, 0.0f);  // Bottom left.
-	vertices[0].color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	vertices[0].texture = XMFLOAT2(0.0f, 1.0f);
 
-	vertices[1].position = XMFLOAT3(-1.0f, 1.0f, 0.0f);  // Top left.
-	vertices[1].color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	vertices[1].position = XMFLOAT3(0.0f, 1.0f, 0.0f);  // Top middle.
+	vertices[1].texture = XMFLOAT2(0.5f, 0.0f);
 
-	vertices[2].position = XMFLOAT3(1.0f, 1.0f, 0.0f);  // Top right.
-	vertices[2].color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-
-	vertices[3].position = XMFLOAT3(1.0f, -1.0f, 0.0f);  // Bottom right.
-	vertices[3].color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	vertices[2].position = XMFLOAT3(1.0f, -1.0f, 0.0f);  // Bottom right.
+	vertices[2].texture = XMFLOAT2(1.0f, 1.0f);
 
 	// Load the index array with data.
 	indices[0] = 0;  // Bottom left.
-	indices[1] = 1;  // Top left.
-	indices[2] = 2;  // top right.
-
-	indices[3] = 0;  // Bottom left.
-	indices[4] = 2;  // Top right.
-	indices[5] = 3;  // Bottom right.
+	indices[1] = 1;  // Top middle.
+	indices[2] = 2;  // Bottom right.
 
 	/*With the vertex array and index array filled out we can now use those to create the vertex buffer and index buffer. 
 	Creating both buffers is done in the same fashion. First fill out a description of the buffer. In the description the ByteWidth 
@@ -218,6 +232,43 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	return;
+}
+
+// LoadTexture is a new private function that will create the texture object and then initialize it with the input file name provided.This function is called during initialization.
+bool ModelClass::LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename)
+{
+	bool result;
+
+
+	// Create the texture object.
+	m_Texture = new Texture;
+	if (!m_Texture)
+	{
+		return false;
+	}
+
+	// Initialize the texture object.
+	result = m_Texture->Initialize(device, deviceContext, filename);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+// The ReleaseTexture function will release the texture object that was created and loaded during the LoadTexture function.
+void ModelClass::ReleaseTexture()
+{
+	// Release the texture object.
+	if (m_Texture)
+	{
+		m_Texture->Shutdown();
+		delete m_Texture;
+		m_Texture = 0;
+	}
 
 	return;
 }

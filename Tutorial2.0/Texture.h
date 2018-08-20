@@ -1,10 +1,10 @@
 // The TextureClass encapsulates the loading, unloading, and accessing of a single texture resource.For each texture needed an object of this class must be instantiated.
 
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: textureclass.h
+// Filename: texture.h
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef _TEXTURECLASS_H_
-#define _TEXTURECLASS_H_
+#ifndef _TEXTURE_H_
+#define _TEXTURE_H_
 
 
 //////////////

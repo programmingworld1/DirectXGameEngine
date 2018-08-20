@@ -9,8 +9,6 @@ TextureShaderClass::TextureShaderClass()
 	m_pixelShader = 0;
 	m_layout = 0;
 	m_matrixBuffer = 0;
-
-	// The new sampler variable is set to null in the class constructor.
 	m_sampleState = 0;
 }
 

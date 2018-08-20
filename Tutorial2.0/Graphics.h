@@ -21,7 +21,7 @@ will be empty but in future tutorials will contain all the graphics objects. */
 #include "D3d.h"
 #include "cameraclass.h"
 #include "Modelclass.h"
-#include "colorshaderclass.h"
+#include "Textureshader.h"
 
 //////////
 // GLOBALS //
@@ -54,7 +54,8 @@ private:
 	D3d * m_Direct3D; // - added
 	CameraClass* m_Camera;
 	ModelClass* m_Model;
-	ColorShaderClass* m_ColorShader;
+	TextureShaderClass* m_TextureShader;
+
 };
 
 #endif
