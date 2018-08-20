@@ -29,7 +29,7 @@ bool TextureShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	// The new texture.vs and texture.ps HLSL files are loaded for this shader.
 
 	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"../Engine/texture.vs", L"../Engine/texture.ps");
+	result = InitializeShader(device, hwnd, L"../Tutorial2.0/texture_vs.hlsl", L"../Tutorial2.0/texture_ps.hlsl");
 	if (!result)
 	{
 		return false;
