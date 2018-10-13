@@ -1,0 +1,38 @@
+////////////////////////////////////////////////////////////////////////////////
+// Filename: lightclass.h
+////////////////////////////////////////////////////////////////////////////////
+#ifndef _LIGHTCLASS_H_
+#define _LIGHTCLASS_H_
+
+
+//////////////
+// INCLUDES //
+//////////////
+#include <d3d11.h>
+#include <d3dcompiler.h>
+#include <directxmath.h>
+#include <fstream>
+using namespace DirectX;
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////
+// Class name: LightClass
+////////////////////////////////////////////////////////////////////////////////
+class Light
+{
+public:
+	Light();
+	Light(const Light&);
+	~Light();
+
+	void SetDiffuseColor(float, float, float, float);
+	void SetDirection(float, float, float);
+
+	XMFLOAT4 GetDiffuseColor();
+	XMFLOAT3 GetDirection();
+
+private:
+	XMFLOAT4 m_diffuseColor;
+	XMFLOAT3 m_direction;
+};
+#endif

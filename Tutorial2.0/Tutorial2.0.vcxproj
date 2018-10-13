@@ -139,10 +139,11 @@
     <ClCompile Include="D3d.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="Modelclass.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="Textureshader.cpp" />
+    <ClCompile Include="LightShader.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -150,13 +151,14 @@
     <ClInclude Include="D3d.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="Modelclass.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="Texture.h" />
-    <ClInclude Include="Textureshader.h" />
+    <ClInclude Include="LightShader.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="texture_ps.hlsl">
+    <FxCompile Include="light_ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
@@ -164,10 +166,10 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <FileType>Document</FileType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TexturePixelShader</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TexturePixelShader</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">LightPixelShader</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">LightPixelShader</EntryPointName>
     </FxCompile>
-    <FxCompile Include="texture_vs.hlsl">
+    <FxCompile Include="light_vs.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
@@ -175,8 +177,8 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <FileType>Document</FileType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TextureVertexShader</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TextureVertexShader</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">LightVertexShader</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">LightVertexShader</EntryPointName>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

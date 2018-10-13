@@ -21,7 +21,10 @@ will be empty but in future tutorials will contain all the graphics objects. */
 #include "D3d.h"
 #include "cameraclass.h"
 #include "Modelclass.h"
-#include "Textureshader.h"
+
+// The GraphicsClass now has two new includes for the LightShaderClass and the LightClass.
+#include "LightShader.h"
+#include "Light.h"
 
 //////////
 // GLOBALS //
@@ -47,15 +50,18 @@ public:
 	bool Frame();
 
 private:
-	bool Render();
+	// Render now takes a float value as input.
+	bool Render(float);
 
 private:
 	// And the second change is the new private pointer to the D3DClass which we have called m_Direct3D. In case you were wondering I use the prefix m_ on all class variables. That way when I'm coding I can remember quickly which variables are members of the class and which are not. 
 	D3d * m_Direct3D; // - added
 	CameraClass* m_Camera;
 	ModelClass* m_Model;
-	TextureShaderClass* m_TextureShader;
 
+	// There are two new private variables for the light shader and the light object.
+	LightShader* m_LightShader;
+	Light* m_Light;
 };
 
 #endif

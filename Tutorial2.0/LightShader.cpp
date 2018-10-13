@@ -1,35 +1,38 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: textureshaderclass.cpp
+// Filename: lightshaderclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
-#include "Textureshader.h"
+#include "LightShader.h"
 
-TextureShaderClass::TextureShaderClass()
+
+LightShader::LightShader()
 {
 	m_vertexShader = 0;
 	m_pixelShader = 0;
 	m_layout = 0;
-	m_matrixBuffer = 0;
 	m_sampleState = 0;
+	m_matrixBuffer = 0;
+	// Set the light constant buffer to null in the class constructor.
+
+	m_lightBuffer = 0;
 }
 
 
-TextureShaderClass::TextureShaderClass(const TextureShaderClass& other)
+LightShader::LightShader(const LightShader& other)
 {
 }
 
 
-TextureShaderClass::~TextureShaderClass()
+LightShader::~LightShader()
 {
 }
 
 
-bool TextureShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+bool LightShader::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
-	// The new texture.vs and texture.ps HLSL files are loaded for this shader.
 
-	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"../Tutorial2.0/texture_vs.hlsl", L"../Tutorial2.0/texture_ps.hlsl");
+	// The new light.vs and light.ps HLSL shader files are used as input to initialize the light shader.
+	result = InitializeShader(device, hwnd, L"../Tutorial2.0/light_vs.hlsl", L"../Tutorial2.0/light_ps.hlsl");
 	if (!result)
 	{
 		return false;
@@ -39,8 +42,7 @@ bool TextureShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 }
 
 
-// The Shutdown function calls the release of the shader variables.
-void TextureShaderClass::Shutdown()
+void LightShader::Shutdown()
 {
 	// Shutdown the vertex and pixel shaders as well as the related objects.
 	ShutdownShader();
@@ -48,16 +50,15 @@ void TextureShaderClass::Shutdown()
 	return;
 }
 
-/*The Render function now takes a new parameter called texture which is the pointer to the texture resource.
-This is then sent into the SetShaderParameters function so that the texture can be set in the shader and then used for rendering.*/
-bool TextureShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture)
+// The Render function now takes in the light direction and light diffuse color as inputs.These variables are then sent into the SetShaderParameters function and finally set inside the shader itself.
+bool LightShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 lightDirection, XMFLOAT4 diffuseColor)
 {
 	bool result;
 
 
 	// Set the shader parameters that it will use for rendering.
-	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture);
+	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, lightDirection, diffuseColor);
 	if (!result)
 	{
 		return false;
@@ -69,31 +70,33 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCou
 	return true;
 }
 
-// InitializeShader sets up the texture shader.
-bool TextureShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
+
+bool LightShader::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT result;
 	ID3D10Blob* errorMessage;
 	ID3D10Blob* vertexShaderBuffer;
 	ID3D10Blob* pixelShaderBuffer;
-	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
-	unsigned int numElements;
-	D3D11_BUFFER_DESC matrixBufferDesc;
+	// The polygonLayout variable has been changed to have three elements instead of two.This is so that it can accommodate a normal vector in the layout.
 
-	// We have a new variable to hold the description of the texture sampler that will be setup in this function.
+	D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
+	unsigned int numElements;
 	D3D11_SAMPLER_DESC samplerDesc;
+	D3D11_BUFFER_DESC matrixBufferDesc;
+	// We also add a new description variable for the light constant buffer.
+
+	D3D11_BUFFER_DESC lightBufferDesc;
 
 
 	// Initialize the pointers this function will use to null.
 	errorMessage = 0;
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
-
-	// Load in the new texture vertex and pixel shaders.
+	// Load in the new light vertex shader.
 
 	// Compile the vertex shader code.
-	result = D3DCompileFromFile(vsFilename, NULL, NULL, "TextureVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
-			&vertexShaderBuffer, &errorMessage);
+	result = D3DCompileFromFile(vsFilename, NULL, NULL, "LightVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		&vertexShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
 		// If the shader failed to compile it should have writen something to the error message.
@@ -109,9 +112,10 @@ bool TextureShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR
 
 		return false;
 	}
+	// Load in the new light pixel shader.
 
 	// Compile the pixel shader code.
-	result = D3DCompileFromFile(psFilename, NULL, NULL, "TexturePixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile(psFilename, NULL, NULL, "LightPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
 		&pixelShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
@@ -143,11 +147,6 @@ bool TextureShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR
 		return false;
 	}
 
-	/*The input layout has changed as we now have a texture element instead of color.
-	The first position element stays unchanged but the SemanticName and Format of the second 
-	element have been changed to TEXCOORD and DXGI_FORMAT_R32G32_FLOAT.These two changes will 
-	now align this layout with our new VertexType in both the ModelClass definition and the typedefs in the shader files.*/
-
 	// Create the vertex input layout description.
 	// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
 	polygonLayout[0].SemanticName = "POSITION";
@@ -165,13 +164,22 @@ bool TextureShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR
 	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
+	// One of the major changes to the shader initialization is here in the polygonLayout.We add a third element for the normal vector that will be used for lighting.The semantic name is NORMAL and the format is the regular DXGI_FORMAT_R32G32B32_FLOAT which handles 3 floats for the x, y, and z of the normal vector.The layout will now match the expected input to the HLSL vertex shader.
+
+	polygonLayout[2].SemanticName = "NORMAL";
+	polygonLayout[2].SemanticIndex = 0;
+	polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	polygonLayout[2].InputSlot = 0;
+	polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	polygonLayout[2].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
 	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
 	// Create the vertex input layout.
-	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(),
-		vertexShaderBuffer->GetBufferSize(), &m_layout);
+	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
+		&m_layout);
 	if (FAILED(result))
 	{
 		return false;
@@ -183,32 +191,6 @@ bool TextureShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR
 
 	pixelShaderBuffer->Release();
 	pixelShaderBuffer = 0;
-
-	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
-	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	matrixBufferDesc.MiscFlags = 0;
-	matrixBufferDesc.StructureByteStride = 0;
-
-	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
-	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer);
-	if (FAILED(result))
-	{
-		return false;
-	}
-	
-	/*The sampler state description is setup here and then can be passed to the pixel shader after.
-	The most important element of the texture sampler description is Filter.Filter will determine 
-	how it decides which pixels will be used or combined to create the final look of the texture 
-	on the polygon face.In the example here I use D3D11_FILTER_MIN_MAG_MIP_LINEAR which is more 
-	expensive in terms of processing but gives the best visual result.It tells the sampler to use 
-	linear interpolation for minification, magnification, and mip - level sampling.
-
-	AddressU and AddressV are set to Wrap which ensures that the coordinates stay between 0.0f and 1.0f.
-	Anything outside of that wraps around and is placed between 0.0f and 1.0f.
-	All other settings for the sampler state description are defaults.*/
 
 	// Create a texture sampler state description.
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -232,19 +214,51 @@ bool TextureShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR
 		return false;
 	}
 
+	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
+	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	matrixBufferDesc.MiscFlags = 0;
+	matrixBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+	// Here we setup the light constant buffer description which will handle the diffuse light color and light direction.Pay attention to the size of the constant buffers, if they are not multiples of 16 you need to pad extra space on to the end of them or the CreateBuffer function will fail.In this case the constant buffer is 28 bytes with 4 bytes padding to make it 32.
+
+	// Setup the description of the light dynamic constant buffer that is in the pixel shader.
+	// Note that ByteWidth always needs to be a multiple of 16 if using D3D11_BIND_CONSTANT_BUFFER or CreateBuffer will fail.
+	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
+	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	lightBufferDesc.MiscFlags = 0;
+	lightBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+	result = device->CreateBuffer(&lightBufferDesc, NULL, &m_lightBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
 	return true;
 }
 
-// The ShutdownShader function releases all the variables used in the TextureShaderClass.
-void TextureShaderClass::ShutdownShader()
-{
-	// The ShutdownShader function now releases the new sampler state that was created during initialization.
 
-	// Release the sampler state.
-	if (m_sampleState)
+void LightShader::ShutdownShader()
+{
+	// The new light constant buffer is released in the ShutdownShader function.
+
+	// Release the light constant buffer.
+	if (m_lightBuffer)
 	{
-		m_sampleState->Release();
-		m_sampleState = 0;
+		m_lightBuffer->Release();
+		m_lightBuffer = 0;
 	}
 
 	// Release the matrix constant buffer.
@@ -252,6 +266,13 @@ void TextureShaderClass::ShutdownShader()
 	{
 		m_matrixBuffer->Release();
 		m_matrixBuffer = 0;
+	}
+
+	// Release the sampler state.
+	if (m_sampleState)
+	{
+		m_sampleState->Release();
+		m_sampleState = 0;
 	}
 
 	// Release the layout.
@@ -278,11 +299,11 @@ void TextureShaderClass::ShutdownShader()
 	return;
 }
 
-// OutputShaderErrorMessage writes out errors to a text file if the HLSL shader could not be loaded.
-void TextureShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
+
+void LightShader::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
 {
 	char* compileErrors;
-	unsigned long long bufferSize, i;
+	unsigned long bufferSize, i;
 	ofstream fout;
 
 
@@ -313,20 +334,18 @@ void TextureShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND
 
 	return;
 }
+// The SetShaderParameters function now takes in lightDirection and diffuseColor as inputs.
 
-/* SetShaderParameters function now takes in a pointer to a texture resource and then assigns it to the shader using 
-the new texture resource pointer.Note that the texture has to be set before rendering of the buffer occurs.*/
-
-bool TextureShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture)
+bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 lightDirection,
+	XMFLOAT4 diffuseColor)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr;
 	unsigned int bufferNumber;
+	MatrixBufferType* dataPtr;
+	LightBufferType* dataPtr2;
 
-
-	// Transpose the matrices to prepare them for the shader.
 	worldMatrix = XMMatrixTranspose(worldMatrix);
 	viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
@@ -352,19 +371,43 @@ bool TextureShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// Set the position of the constant buffer in the vertex shader.
 	bufferNumber = 0;
 
-	// Finanly set the constant buffer in the vertex shader with the updated values.
+	// Now set the constant buffer in the vertex shader with the updated values.
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
-
-	//The SetShaderParameters function has been modified from the previous tutorial to include setting the texture in the pixel shader now.
 
 	// Set shader texture resource in the pixel shader.
 	deviceContext->PSSetShaderResources(0, 1, &texture);
 
+	// The light constant buffer is setup the same way as the matrix constant buffer.We first lock the buffer and get a pointer to it.After that we set the diffuse color and light direction using that pointer.Once the data is set we unlock the buffer and then set it in the pixel shader.Note that we use the PSSetConstantBuffers function instead of VSSetConstantBuffers since this is a pixel shader buffer we are setting.
+
+	// Lock the light constant buffer so it can be written to.
+	result = deviceContext->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Get a pointer to the data in the constant buffer.
+	dataPtr2 = (LightBufferType*)mappedResource.pData;
+
+	// Copy the lighting variables into the constant buffer.
+	dataPtr2->diffuseColor = diffuseColor;
+	dataPtr2->lightDirection = lightDirection;
+	dataPtr2->padding = 0.0f;
+
+	// Unlock the constant buffer.
+	deviceContext->Unmap(m_lightBuffer, 0);
+
+	// Set the position of the light constant buffer in the pixel shader.
+	bufferNumber = 0;
+
+	// Finally set the light constant buffer in the pixel shader with the updated values.
+	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
+
 	return true;
 }
 
-// RenderShader calls the shader technique to render the polygons.
-void TextureShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+
+void LightShader::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// Set the vertex input layout.
 	deviceContext->IASetInputLayout(m_layout);
@@ -372,7 +415,6 @@ void TextureShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int in
 	// Set the vertex and pixel shaders that will be used to render this triangle.
 	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
 	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
-	// The RenderShader function has been changed to include setting the sample state in the pixel shader before rendering.
 
 	// Set the sampler state in the pixel shader.
 	deviceContext->PSSetSamplers(0, 1, &m_sampleState);
