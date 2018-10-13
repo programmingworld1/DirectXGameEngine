@@ -68,7 +68,7 @@ bool Graphics::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Initialize the model object.
-	result = m_Model->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), "../data/stone01.tga");
+	result = m_Model->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), "../data/cube.txt", "../data/stone01.tga");
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
@@ -207,8 +207,9 @@ bool Graphics::Render(float rotation)
 
 	// Here we rotate the world matrix by the rotation value so that when we render the triangle using this updated world matrix it will spin the triangle by the rotation amount.
 
+	worldMatrix = XMMatrixRotationY(rotation);
 	// Rotate the world matrix by the rotation value so that the triangle will spin.
-	XMMatrixRotationY(rotation);
+	//XMMatrixRotationY(rotation);
 
 	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
 	m_Model->Render(m_Direct3D->GetDeviceContext());
@@ -217,7 +218,7 @@ bool Graphics::Render(float rotation)
 
 	// Render the model using the light shader.
 	result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-			m_Model->GetTexture(), m_Light->GetDirection(), m_Light->GetDiffuseColor());
+		m_Model->GetTexture(), m_Light->GetDirection(), m_Light->GetDiffuseColor());
 	if (!result)
 	{
 		return false;
@@ -228,3 +229,6 @@ bool Graphics::Render(float rotation)
 
 	return true;
 }
+
+
+

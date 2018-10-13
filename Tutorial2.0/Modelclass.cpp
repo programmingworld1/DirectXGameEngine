@@ -2,7 +2,7 @@
 // Filename: modelclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 
-/*As stated previously the ModelClass is responsible for encapsulating the geometry for 3D models. 
+/*As stated previously the ModelClass is responsible for encapsulating the geometry for 3D models.
 In this tutorial we will manually setup the data for a single green triangle. We will also create a vertex and index buffer for the triangle so that it can be rendered.*/
 #include "modelclass.h"
 
@@ -12,7 +12,7 @@ ModelClass::ModelClass()
 	m_vertexBuffer = 0;
 	m_indexBuffer = 0;
 	m_Texture = 0;
-
+	m_model = 0;
 }
 
 ModelClass::ModelClass(const ModelClass& other)
@@ -23,10 +23,24 @@ ModelClass::~ModelClass()
 {
 }
 
-/*The Initialize function will call the initialization functions for the vertex and index buffers.*/
-bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* textureFilename)
+// The Initialize function now takes as input the file name of the model that should be loaded.
+// bool ModelClass::Initialize(ID3D11Device* device, char* modelFilename, WCHAR* textureFilename)
+
+bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* modelFilename, char* textureFilename)
 {
 	bool result;
+
+	/* In the Initialize function we now call the new LoadModel function first.
+	It will load the model data from the file name we provide into the new m_model array.
+	Once this model array is filled we can then build the vertex and index buffers from it.
+	Since InitializeBuffers now depends on this model data you have to make sure to call the functions in the correct order.*/
+
+	// Load in the model data,
+	result = LoadModel(modelFilename);
+	if (!result)
+	{
+		return false;
+	}
 
 	// Initialize the vertex and index buffers.
 	result = InitializeBuffers(device);
@@ -55,10 +69,13 @@ void ModelClass::Shutdown()
 	// Shutdown the vertex and index buffers.
 	ShutdownBuffers();
 
+	// Release the model data.
+	ReleaseModel();
+
 	return;
 }
 
-/*Render is called from the GraphicsClass::Render function. 
+/*Render is called from the GraphicsClass::Render function.
 This function calls RenderBuffers to put the vertex and index buffers on the graphics pipeline so the color shader will be able to render them.*/
 void ModelClass::Render(ID3D11DeviceContext* deviceContext)
 {
@@ -80,8 +97,8 @@ ID3D11ShaderResourceView* ModelClass::GetTexture()
 	return m_Texture->GetTexture();
 }
 
-/*The InitializeBuffers function is where we handle creating the vertex and index buffers. 
-Usually you would read in a model and create the buffers from that data file. 
+/*The InitializeBuffers function is where we handle creating the vertex and index buffers.
+Usually you would read in a model and create the buffers from that data file.
 For this tutorial we will just set the points in the vertex and index buffer manually since it is only a single triangle.*/
 bool ModelClass::InitializeBuffers(ID3D11Device* device)
 {
@@ -90,14 +107,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 	HRESULT result;
+	int i;
 
-	/*First create two temporary arrays to hold the vertex and index data that we will use later to populate the final buffers with.*/
-
-	// Set the number of vertices in the vertex array.
-	m_vertexCount = 4;
-
-	// Set the number of indices in the index array.
-	m_indexCount = 6;
 
 	// Create the vertex array.
 	vertices = new VertexType[m_vertexCount];
@@ -113,35 +124,22 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	/* The vertex array now has a texture coordinate component instead of a color component.
-	The texture vector is always U first and V second.For example the first texture coordinate 
-	is bottom left of the triangle which corresponds to U 0.0, V 1.0.Use the diagram at the top 
-	of this page to figure out what your coordinates need to be.Note that you can change the 
-	coordinates to map any part of the texture to any part of the polygon face.In this tutorial 
-	I'm just doing a direct mapping for simplicity reasons.*/
+	//Loading the vertex and index arrays has changed a bit.Instead of setting the values manually we loop through all the elements in the new m_model array and copy that data from there into the vertex array.The index array is easy to build as each vertex we load has the same index number as the position in the array it was loaded into.
 
-	// Load the vertex array with data.
-	vertices[0].position = XMFLOAT3(-1.0f, -1.0f, 0.0f);  // Bottom left.
-	vertices[0].texture = XMFLOAT2(0.0f, 1.0f);
-	vertices[0].normal = XMFLOAT3(0.0f, 0.0f, -1.0f);
+	// Load the vertex array and index array with data.
+	for (i = 0; i<m_vertexCount; i++)
+	{
+		vertices[i].position = XMFLOAT3(m_model[i].x, m_model[i].y, m_model[i].z);
+		vertices[i].texture = XMFLOAT2(m_model[i].tu, m_model[i].tv);
+		vertices[i].normal = XMFLOAT3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
 
-	vertices[1].position = XMFLOAT3(0.0f, 1.0f, 0.0f);  // Top middle.
-	vertices[1].texture = XMFLOAT2(0.5f, 0.0f);
-	vertices[1].normal = XMFLOAT3(0.0f, 0.0f, -1.0f);
+		indices[i] = i;
+	}
 
-	vertices[2].position = XMFLOAT3(1.0f, -1.0f, 0.0f);  // Bottom right.
-	vertices[2].texture = XMFLOAT2(1.0f, 1.0f);
-	vertices[2].normal = XMFLOAT3(0.0f, 0.0f, -1.0f);
-
-	// Load the index array with data.
-	indices[0] = 0;  // Bottom left.
-	indices[1] = 1;  // Top middle.
-	indices[2] = 2;  // Bottom right.
-
-	/*With the vertex array and index array filled out we can now use those to create the vertex buffer and index buffer. 
-	Creating both buffers is done in the same fashion. First fill out a description of the buffer. In the description the ByteWidth 
-	(size of the buffer) and the BindFlags (type of buffer) are what you need to ensure are filled out correctly. After the description 
-	is filled out you need to also fill out a subresource pointer which will point to either your vertex or index array you previously 
+	/*With the vertex array and index array filled out we can now use those to create the vertex buffer and index buffer.
+	Creating both buffers is done in the same fashion. First fill out a description of the buffer. In the description the ByteWidth
+	(size of the buffer) and the BindFlags (type of buffer) are what you need to ensure are filled out correctly. After the description
+	is filled out you need to also fill out a subresource pointer which will point to either your vertex or index array you previously
 	created. With the description and subresource pointer you can call CreateBuffer using the D3D device and it will return a pointer to your new buffer.*/
 
 	// Set up the description of the static vertex buffer.
@@ -214,8 +212,8 @@ void ModelClass::ShutdownBuffers()
 	return;
 }
 
-/*RenderBuffers is called from the Render function. The purpose of this function is to set the vertex buffer and index buffer as active on the input assembler in the GPU. 
-Once the GPU has an active vertex buffer it can then use the shader to render that buffer. This function also defines how those buffers should be drawn such as triangles, 
+/*RenderBuffers is called from the Render function. The purpose of this function is to set the vertex buffer and index buffer as active on the input assembler in the GPU.
+Once the GPU has an active vertex buffer it can then use the shader to render that buffer. This function also defines how those buffers should be drawn such as triangles,
 lines, fans, and so forth. In this tutorial we set the vertex buffer and index buffer as active on the input assembler and tell the GPU that the buffers should be drawn
 as triangles using the IASetPrimitiveTopology DirectX function.*/
 void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
@@ -244,7 +242,6 @@ bool ModelClass::LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceCo
 {
 	bool result;
 
-
 	// Create the texture object.
 	m_Texture = new Texture;
 	if (!m_Texture)
@@ -271,6 +268,82 @@ void ModelClass::ReleaseTexture()
 		m_Texture->Shutdown();
 		delete m_Texture;
 		m_Texture = 0;
+	}
+
+	return;
+}
+
+/*This is the new LoadModel function which handles loading the model data from the text file into the m_model
+array variable.It opens the text file and reads in the vertex count first.After reading the vertex count it creates
+the ModelType array and then reads each line into the array.Both the vertex count and index count are now set in this function.*/
+
+bool ModelClass::LoadModel(char* filename)
+{
+	ifstream fin;
+	char input;
+	int i;
+
+
+	// Open the model file.
+	fin.open(filename);
+
+	// If it could not open the file then exit.
+	if (fin.fail())
+	{
+		return false;
+	}
+
+	// Read up to the value of vertex count.
+	fin.get(input);
+	while (input != ':')
+	{
+		fin.get(input);
+	}
+
+	// Read in the vertex count.
+	fin >> m_vertexCount;
+
+	// Set the number of indices to be the same as the vertex count.
+	m_indexCount = m_vertexCount;
+
+	// Create the model using the vertex count that was read in.
+	m_model = new ModelType[m_vertexCount];
+	if (!m_model)
+	{
+		return false;
+	}
+
+	// Read up to the beginning of the data.
+	fin.get(input);
+	while (input != ':')
+	{
+		fin.get(input);
+	}
+	fin.get(input);
+	fin.get(input);
+
+	// Read in the vertex data.
+	for (i = 0; i<m_vertexCount; i++)
+	{
+		fin >> m_model[i].x >> m_model[i].y >> m_model[i].z;
+		fin >> m_model[i].tu >> m_model[i].tv;
+		fin >> m_model[i].nx >> m_model[i].ny >> m_model[i].nz;
+	}
+
+	// Close the model file.
+	fin.close();
+
+	return true;
+}
+
+// The ReleaseModel function handles deleting the model data array.
+
+void ModelClass::ReleaseModel()
+{
+	if (m_model)
+	{
+		delete[] m_model;
+		m_model = 0;
 	}
 
 	return;
